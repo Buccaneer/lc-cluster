@@ -5,14 +5,20 @@ const { Readable } = require('stream'),
 
 module.exports = class ConnectionStream extends Readable {
     
-    constructor (url, stopTime) {
+    constructor (url, startTime, stopTime) {
         super({objectMode: true})
-        this.url = url
+        this.startTime = startTime instanceof Date ? startTime : new Date(startTime)
         this.stopTime = stopTime instanceof Date ? stopTime : new Date(stopTime)
+        this.url = this.formQuery(url, this.startTime)
         this.connections = []
     }
     
-    // TODO: implement stop condition
+    formQuery(url, time) {
+        let parsed = URI.parse(url)
+        parsed.query = "departureTime=" + time.toISOString()
+        return URI.serialize(parsed)
+    }
+    
     // TODO: implement pre-fetching _before_ you run out of connections
     _read() {
         if (this.connections.length > 0) {
@@ -33,8 +39,8 @@ module.exports = class ConnectionStream extends Readable {
         }
     }
     
-    static create(urls, stopTime) {
-        let streams = urls.map((url) => new ConnectionStream(url, stopTime))
+    static create(urls, startTime, stopTime) {
+        let streams = urls.map((url) => new ConnectionStream(url, startTime, stopTime))
         return mergeStream(...streams)
     }
 }
