@@ -1,0 +1,16 @@
+{
+  "name": "lc-cluster",
+  "version": "0.0.0",
+  "description": "Clusters stops using Linked Connections fragments",
+  "main": "cluster.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Pieter-Jan Vandenberghe",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^2.6.2",
+    "follow-redirects": "^1.7.0",
+    "merge-stream": "^1.0.1"
+  }
+}
