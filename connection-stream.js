@@ -1,13 +1,14 @@
 const { Readable } = require('stream'),
     fetcher = require('./fetcher.js'),
-    mergeStream = require('merge-stream')
+    mergeStream = require('merge-stream'),
+    URI = require('uri-js')
 
 module.exports = class ConnectionStream extends Readable {
     
     constructor (url, stopTime) {
         super({objectMode: true})
         this.url = url
-        this.stopTime = stopTime
+        this.stopTime = stopTime instanceof Date ? stopTime : new Date(stopTime)
         this.connections = []
     }
     
@@ -17,11 +18,18 @@ module.exports = class ConnectionStream extends Readable {
         if (this.connections.length > 0) {
             this.push(this.connections.shift())
         } else {
-            fetcher.fetchJSON(this.url).then((json) => {
-                this.url = json['hydra:next']
-                this.connections = json['@graph']
-                this.push(this.connections.shift())
-            })
+            let time = new Date(URI.parse(this.url).query.split(/&/)
+                .filter(t => t.startsWith('departureTime'))[0]
+                .split("=")[1])
+            if (time < this.stopTime) {
+                fetcher.fetchJSON(this.url).then((json) => {
+                    this.url = json['hydra:next']
+                    this.connections = json['@graph']
+                    this.push(this.connections.shift())
+                })
+            } else {
+                this.push(null)
+            }
         }
     }
     
