@@ -131,7 +131,7 @@ module.exports = class Clustering {
     
     /** MERGE BASED CLUSTERING **/
     
-    // Naive and VERY inneficient implementation of merge based clustering
+    // Naive and VERY inefficient implementation of merge based clustering
     static mergeBasedCluster(stops, n) {
         // Wrap each stop in an array
         let clusters = Object.keys(stops).map(key => [stops[key]])
