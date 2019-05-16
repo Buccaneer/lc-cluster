@@ -1,4 +1,5 @@
 module.exports = {
+    host: 'localhost:3000',
     path: '/Users/Pieter-Jan/Documents/UGent/thesis/lc',
     startTime: '2019-04-25T00:00:00.000Z',
     endTime: '2019-04-26T00:00:00.000Z',

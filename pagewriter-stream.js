@@ -20,14 +20,15 @@ module.exports = class pageWriterStream extends Writable {
     if (this._currentFileName == '') {
       this._currentFileName = data.departureTime.replace(new RegExp(':', 'g'),'D');
       this._wstream = fs.createWriteStream(this._targetPath + this._currentFileName + '.jsonld');
-      this._wstream.write(dataString);
+      this._wstream.write("[" + dataString);
       this._byteCount += buffer.byteLength;
     } else {
       if (this._byteCount >= this._size && data.departureTime != this._lastDepartureTime) {
+        this._wstream.write("]");
         this._wstream.end();
         this._currentFileName = data.departureTime.replace(new RegExp(':', 'g'),'D');
         this._wstream = fs.createWriteStream(this._targetPath + this._currentFileName + '.jsonld');
-        this._wstream.write(dataString);
+        this._wstream.write("[" + dataString);
         this._byteCount = buffer.byteLength;
       } else {
         this._wstream.write(',\n' + dataString);
