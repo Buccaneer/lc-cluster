@@ -4,8 +4,9 @@ module.exports = class Clustering {
 
     static kMeansCluster(stops, n) {
         // Convert from Object with Key:Value pairs to Array of stops
-        stops = Object.keys(stops).map(key => stops[key])
-        let candidates = Array.from(stops)
+        //stops = Object.keys(stops).map(key => stops[key])
+        //let candidates = Array.from(stops)
+        let candidates = stops        
         
         // Pick n random stops as clusters, then add all the closest stops to their respective clusters
         let clusters = []

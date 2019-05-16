@@ -2,7 +2,7 @@ module.exports = {
     host: 'localhost:3000',
     path: '/Users/Pieter-Jan/Documents/UGent/thesis/lc',
     startTime: '2019-04-25T00:00:00.000Z',
-    endTime: '2019-04-26T00:00:00.000Z',
+    stopTime: '2019-04-27T00:00:00.000Z',
     agencies: [
         { 
             name: 'delijn',
@@ -19,7 +19,8 @@ module.exports = {
                 'https://openplanner.ilabt.imec.be/delijn/Limburg/connections',
                 'https://openplanner.ilabt.imec.be/delijn/Oost-Vlaanderen/connections',
                 'https://openplanner.ilabt.imec.be/delijn/Vlaams-Brabant/connections',
-                'https://openplanner.ilabt.imec.be/delijn/West-Vlaanderen/connections'
+                'https://openplanner.ilabt.imec.be/delijn/West-Vlaanderen/connections',
+                'https://openplanner.ilabt.imec.be/delijn/undefined/connections'
             ]
         }
     ] 
