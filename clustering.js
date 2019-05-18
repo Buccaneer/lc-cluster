@@ -6,7 +6,7 @@ module.exports = class Clustering {
         // Convert from Object with Key:Value pairs to Array of stops
         //stops = Object.keys(stops).map(key => stops[key])
         //let candidates = Array.from(stops)
-        let candidates = stops        
+        let candidates = Array.from(stops)   
         
         // Pick n random stops as clusters, then add all the closest stops to their respective clusters
         let clusters = []

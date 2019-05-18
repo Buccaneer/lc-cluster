@@ -8,6 +8,10 @@ router.get('/:agency/stops', (req, res) => {
     stops.getStops(req, res)
 })
 
+router.get('/:agency/index', (req, res) => {
+    stops.getIndex(req, res)
+})
+
 router.get('/:agency/clusters', (req, res) => {
     clusters.getClusters(req, res)
 })

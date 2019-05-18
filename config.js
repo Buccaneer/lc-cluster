@@ -1,8 +1,8 @@
 module.exports = {
     host: 'localhost:3000',
     path: '/Users/Pieter-Jan/Documents/UGent/thesis/lc',
-    startTime: '2019-04-25T00:00:00.000Z',
-    stopTime: '2019-04-27T00:00:00.000Z',
+    startTime: '2019-05-15T00:00:00.000Z',
+    stopTime: '2019-05-17T00:00:00.000Z',
     agencies: [
         { 
             name: 'delijn',

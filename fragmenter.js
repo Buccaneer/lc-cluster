@@ -112,7 +112,10 @@ module.exports = class Fragmenter {
                 stringifyStream.end()
                 resolve()
                 //resolve(fsp.writeFile(agencyPath + '/connections-sorted.json', JSON.stringify(connections), 'utf8'))
-            }) 
+            })
+            stream.on('error', () => {
+                reject(error)
+            })
         })
     }
     
@@ -121,34 +124,36 @@ module.exports = class Fragmenter {
     }
     
     static createFragments(agencyPath) {
-        let connections = JSON.parse(fs.readFileSync(agencyPath + '/connections-sorted.json', 'utf8'));
-        let index = JSON.parse(fs.readFileSync(agencyPath + '/index.json', 'utf8'));
         let clusters = []
-
-        // TODO find a more elegant solution for stops whose location is not known
-        clusters[50] = []
-
-        for (let connection of connections) {
-            let clusterIndex = index[connection.departureStop]
-            if (!clusterIndex) clusterIndex = 50
-            if (Array.isArray(clusters[clusterIndex])) {
-                clusters[clusterIndex].push(connection)
-            } else {
-                clusters[clusterIndex] = [connection]
-            }
-        }
-        for (let i = 0; i < clusters.length; ++i) {
-            if (clusters[i]) {
-                console.log('Cluster ' + i + ': ' + clusters[i].length)
-                if (!fs.existsSync(agencyPath + '/' + i)) {
-                    fs.mkdirSync(agencyPath + '/' + i);
+        clusters[50] = [] // TODO find a more elegant solution for stops whose location is not known
+        
+        let index = JSON.parse(fs.readFileSync(agencyPath + '/index.json', 'utf8'));
+        let readStream = fs.createReadStream(agencyPath + '/connections-sorted.json');
+        let parseStream = JSONStream.parse("*")
+        readStream.pipe(parseStream)
+            .on('data', (connection) => {
+                let clusterIndex = index[connection.departureStop]
+                if (!clusterIndex && clusterIndex !== 0) clusterIndex = 50
+                if (Array.isArray(clusters[clusterIndex])) {
+                    clusters[clusterIndex].push(connection)
+                } else {
+                    clusters[clusterIndex] = [connection]
                 }
-                const connectionStream = new Stream.Readable({objectMode: true})
-                connectionStream.pipe(new PageWriterStream(agencyPath + '/' + i, 50000))
-                clusters[i].forEach((connection) => connectionStream.push(connection))
-                connectionStream.push(null)
-            }
-        }
+            })
+            .on('end', () => {
+                for (let i = 0; i < clusters.length; ++i) {
+                    if (clusters[i]) {
+                        console.log('Cluster ' + i + ': ' + clusters[i].length)
+                        if (!fs.existsSync(agencyPath + '/' + i)) {
+                            fs.mkdirSync(agencyPath + '/' + i);
+                        }
+                        const connectionStream = new Stream.Readable({objectMode: true})
+                        connectionStream.pipe(new PageWriterStream(agencyPath + '/' + i, 50000))
+                        clusters[i].forEach((connection) => connectionStream.push(connection))
+                        connectionStream.push(null)
+                    }
+                }
+            })
     }
     
     static createAllClusterSummaries() {
@@ -156,6 +161,30 @@ module.exports = class Fragmenter {
     }
     
     static createClusterSummary(agencyPath) {
+        let summary = []
+
+        let index = JSON.parse(fs.readFileSync(agencyPath + '/index.json', 'utf8'));
+        let readStream = fs.createReadStream(agencyPath + '/connections-sorted.json');
+        let parseStream = JSONStream.parse("*")
+        readStream.pipe(parseStream)
+            .on('data', (connection) => {
+                let departureCluster = index[connection.departureStop]
+                let arrivalCluster = index[connection.arrivalStop]
+                if (!departureCluster && departureCluster !== 0) departureCluster = 50
+                if (!arrivalCluster && arrivalCluster !== 0) arrivalCluster = 50
+                if (departureCluster !== arrivalCluster) {
+                    if (!summary[departureCluster]) {
+                        summary[departureCluster] = {}
+                        summary[departureCluster][arrivalCluster] = 1
+                    } else {
+                        summary[departureCluster][arrivalCluster] = 1
+                    }
+                }
+            })
+            .on('end', () => fs.writeFileSync(agencyPath + '/summary.json', JSON.stringify(summary), 'utf8'))
+    }
+    
+    /*static createClusterSummary(agencyPath) {
         let connections = JSON.parse(fs.readFileSync(agencyPath + '/connections-sorted.json', 'utf8'));
         let index = JSON.parse(fs.readFileSync(agencyPath + '/index.json', 'utf8'));
         let summary = []
@@ -174,5 +203,5 @@ module.exports = class Fragmenter {
             }
         }
         fs.writeFileSync(agencyPath + '/summary.json', JSON.stringify(summary), 'utf8')
-    }
+    }*/
 }
