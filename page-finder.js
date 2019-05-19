@@ -28,30 +28,41 @@ module.exports = new class PageFinder {
         let cluster = req.params.cluster
         let target = req.query.departureTime ? this.toFileName(req.query.departureTime) : this.toFileName(config.startTime)
         try {
-            let [file, index] = this.findResource(target, agency, cluster)
-            fsp.readFile(config.path + '/' + agency + '/' + cluster + '/' + file)
+            let [fragment, index] = this.findResource(target, agency, cluster)
+            fsp.readFile(config.path + '/' + agency + '/' + cluster + '/' + fragment)
                 .then((file) => {
-                let page = JSON.parse(file)
-                let params = {
-                    data: page,
-                    agency: req.params.agency,
-                    cluster: req.params.cluster,
-                    index: index,
-                    departureTime: req.query.departureTime
-                }
-                this.addHydraMetadata(params).then((jsonld) => res.json(jsonld))
-            })
+                    console.log(agency + '/' + cluster + '/' + fragment)
+                    let page = JSON.parse(file)
+                    let params = {
+                        data: page,
+                        agency: req.params.agency,
+                        cluster: req.params.cluster,
+                        index: index,
+                        departureTime: this.toISODate(fragment)
+                    }
+                    this.addHydraMetadata(params).then((jsonld) => res.json(jsonld))
+                }) 
         } catch (error) {
-            res.status(404).send();
+            res.redirect(req.originalUrl + '?departureTime=' + this.pages[agency][cluster][0])
         }
     }
     
     toFileName(isostring) {
-        return isostring.replace(new RegExp(':', 'g'),'D')
+        return isostring.replace(new RegExp(':', 'g'),'D') + '.jsonld'
     }
     
     toISODate(filename) {
-        return filename.replace(new RegExp('D', 'g'),':')
+        return filename.replace('.jsonld', '').replace(new RegExp('D', 'g'),':')
+    }
+    
+    findNext(agency, cluster, index) {
+        if (Number(index) + 1 >= this.pages[agency][cluster].length) return undefined
+        return this.pages[agency][cluster][Number(index) + 1].replace('.jsonld', '')
+    }
+    
+    findPrevious(agency, cluster, index) {
+        if (Number(index) - 1 < 0) return undefined
+        return this.pages[agency][cluster][Number(index) - 1].replace('.jsonld', '')
     }
     
     async addHydraMetadata(params) {
@@ -67,14 +78,14 @@ module.exports = new class PageFinder {
 
                 jsonld_skeleton['@id'] = host + agency + '/' + cluster + '/connections?departureTime=' + new Date(departureTime).toISOString();
 
-                let next = this.toISODate(this.pages[agency][cluster][Number(index) + 1].replace('.jsonld', ''));
+                let next = this.findNext(agency, cluster, index)
                 if (next) {
-                    jsonld_skeleton['hydra:next'] = host + agency + '/' + cluster + '/connections?departureTime=' + new Date(next).toISOString();
+                    jsonld_skeleton['hydra:next'] = host + agency + '/' + cluster + '/connections?departureTime=' + new Date(this.toISODate(next)).toISOString();
                 }
 
-                let prev = this.toISODate(this.pages[agency][cluster][Number(index) - 1].replace('.jsonld', ''));
+                let prev = this.findPrevious(agency, cluster, index)
                 if (prev && prev !== null) {
-                    jsonld_skeleton['hydra:previous'] = host + agency + '/' + cluster + '/connections?departureTime=' + new Date(prev).toISOString();
+                    jsonld_skeleton['hydra:previous'] = host + agency + '/' + cluster + '/connections?departureTime=' + new Date(this.toISODate(prev)).toISOString();
                 }
 
                 jsonld_skeleton['hydra:search']['hydra:template'] = host + agency + '/' + cluster + '/connections{?departureTime}';
@@ -91,8 +102,11 @@ module.exports = new class PageFinder {
         // Checking that target date is contained in the list of fragments.
         if (fragments && target >= fragments[0] && target <= fragments[fragments.length - 1]) {
             fragment = this.binarySearch(target, fragments);
+        } else if (target < fragments[0]) {
+            fragment = [fragments[0], 0]
+        } else if (target > fragments[fragments.length - 1]) {
+            fragment = [fragments[fragments.length - 1], fragments.length - 1]
         }
-            
         if (fragment !== null) {
             return fragment;
         } else {

@@ -17,6 +17,7 @@ router.get('/:agency/clusters', (req, res) => {
 })
 
 router.get('/:agency/:cluster/connections', (req, res) => {
+    console.log(req.params.agency + '/' + req.params.cluster + '@' + req.query.departureTime)
     pageFinder.getConnections(req, res)
 })
 

@@ -18,17 +18,28 @@ module.exports = class pageWriterStream extends Writable {
     let buffer = Buffer.from(dataString);
 
     if (this._currentFileName == '') {
+      // Note so elegant solution to make sure closing ] is there
+      if (data === ']') {
+        done();
+        return;
+      }
       this._currentFileName = data.departureTime.replace(new RegExp(':', 'g'),'D');
       this._wstream = fs.createWriteStream(this._targetPath + this._currentFileName + '.jsonld');
-      this._wstream.write("[" + dataString);
+      this._wstream.write('[' + dataString);
       this._byteCount += buffer.byteLength;
     } else {
+      // Note so elegant solution to make sure closing ] is there
+      if (data === ']') {
+        this._wstream.write(data);
+        done();
+        return;
+      }
       if (this._byteCount >= this._size && data.departureTime != this._lastDepartureTime) {
-        this._wstream.write("]");
+        this._wstream.write(']');
         this._wstream.end();
         this._currentFileName = data.departureTime.replace(new RegExp(':', 'g'),'D');
         this._wstream = fs.createWriteStream(this._targetPath + this._currentFileName + '.jsonld');
-        this._wstream.write("[" + dataString);
+        this._wstream.write('[' + dataString);
         this._byteCount = buffer.byteLength;
       } else {
         this._wstream.write(',\n' + dataString);

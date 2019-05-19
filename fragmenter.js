@@ -22,49 +22,6 @@ module.exports = class Fragmenter {
         }))
     }
 
-    /*static async createAllSummaries() {
-        return Promise.all(config.agencies.map((agency) => {
-            return Fragmenter.createSummary(agency.stopUrls, agency.connectionUrls, config.startTime, config.stopTime)
-                .then((summary) => {
-                    if (!fs.existsSync(config.path + '/' + agency.name)) {
-                        fs.mkdirSync(config.path + '/' + agency.name);
-                    }
-                    return fsp.writeFile(config.path + '/' + agency.name + '/summary.json', JSON.stringify(summary), 'utf8')
-                })
-        }))
-    }
-    
-    // Scans through connections and adds neighbours to every stop (+ count)
-    static async createSummary(stopUrls, connectionUrls, startTime, stopTime) {
-        return new Promise(async (resolve, reject) => {
-            let summary = await Fetcher.fetchGraph(stopUrls)
-            summary = summary.reduce((sum, stop) => {
-                stop.neighbours = {}
-                sum[stop["@id"]] = stop
-                return sum
-            }, {})
-            let stream = ConnectionStream.create(connectionUrls, startTime, stopTime)
-            stream.on('data', (connection) => {
-                if (!summary[connection.departureStop]) {
-                    //ignore those stops for now, possibly outdated dataset
-                    //console.log("Warning: could not find stop \"" + connection.departureStop +"\" in summary.")
-                    return
-                }
-                if (!summary[connection.departureStop].neighbours[connection.arrivalStop]) {
-                    summary[connection.departureStop].neighbours[connection.arrivalStop] = {count: 1}
-                } else {
-                    summary[connection.departureStop].neighbours[connection.arrivalStop].count += 1
-                }
-            });
-            stream.on('end', () => {
-                resolve(summary)
-            })
-            stream.on('error', (error) => {
-                reject(error)
-            })
-        })
-    }*/
-
     static async createAllClusters() {
         return Promise.all(config.agencies.map((agency) => {
             return fsp.readFile(config.path + '/' + agency.name + '/stops.json', 'utf8')
@@ -104,7 +61,7 @@ module.exports = class Fragmenter {
                 if (connection.departureTime >= config.startTime && connection.departureTime < config.stopTime) connections.push(connection)
             });
             stream.on('end', () => {
-                connections.sort((connectionA, connectionB) => connectionB.departureTime - connectionA.departureTime)
+                connections.sort((connectionA, connectionB) => new Date(connectionA.departureTime) - new Date(connectionB.departureTime))
                 let stringifyStream = JSONStream.stringify()
                 let writeStream = fs.createWriteStream(agencyPath + '/connections-sorted.json', 'utf8')
                 stringifyStream.pipe(writeStream)
@@ -150,6 +107,7 @@ module.exports = class Fragmenter {
                         const connectionStream = new Stream.Readable({objectMode: true})
                         connectionStream.pipe(new PageWriterStream(agencyPath + '/' + i, 50000))
                         clusters[i].forEach((connection) => connectionStream.push(connection))
+                        connectionStream.push(']')
                         connectionStream.push(null)
                     }
                 }
@@ -183,25 +141,5 @@ module.exports = class Fragmenter {
             })
             .on('end', () => fs.writeFileSync(agencyPath + '/summary.json', JSON.stringify(summary), 'utf8'))
     }
-    
-    /*static createClusterSummary(agencyPath) {
-        let connections = JSON.parse(fs.readFileSync(agencyPath + '/connections-sorted.json', 'utf8'));
-        let index = JSON.parse(fs.readFileSync(agencyPath + '/index.json', 'utf8'));
-        let summary = []
-        for (let connection of connections) {
-            let departureCluster = index[connection.departureStop]
-            let arrivalCluster = index[connection.arrivalStop]
-            if (!departureCluster) departureCluster = 50
-            if (!arrivalCluster) arrivalCluster = 50
-            if (departureCluster !== arrivalCluster) {
-                if (!summary[departureCluster]) {
-                    summary[departureCluster] = {}
-                    summary[departureCluster][arrivalCluster] = 1
-                } else {
-                    summary[departureCluster][arrivalCluster] = 1
-                }
-            }
-        }
-        fs.writeFileSync(agencyPath + '/summary.json', JSON.stringify(summary), 'utf8')
-    }*/
+
 }
