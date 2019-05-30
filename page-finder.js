@@ -9,7 +9,8 @@ module.exports = new class PageFinder {
         // Note: does not check if file/dir
         for (let agency of config.agencies) {
             this.pages[agency.name] = []
-            for (let cluster = 0; cluster < agency.clusters; ++cluster) {
+            // NOTE: <= because extra "cluster" 50 which contains all fragments
+            for (let cluster = 0; cluster <= agency.clusters; ++cluster) {
                 this.pages[agency.name][cluster] = []
                 let path = config.path + '/' + agency.name + '/' + cluster
                 if (fs.existsSync(path)) {

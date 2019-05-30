@@ -80,6 +80,17 @@ module.exports = class Fragmenter {
         config.agencies.forEach((agency) => Fragmenter.createFragments(config.path + '/' + agency.name))
     }
     
+    // Create a "cluster" with all the connections to compare with
+    static createFragmentsWithoutCluster() {
+        let agencyPath = config.path + '/' + config.agencies[0].name
+        if (!fs.existsSync(agencyPath + '/50')) {
+            fs.mkdirSync(agencyPath + '/50')
+        }
+        let readStream = fs.createReadStream(agencyPath + '/connections-sorted.json');
+        let parseStream = JSONStream.parse("*")
+        readStream.pipe(parseStream).pipe(new PageWriterStream(agencyPath + '/50', 50000))
+    }
+    
     static createFragments(agencyPath) {
         let clusters = []
         clusters[50] = [] // TODO find a more elegant solution for stops whose location is not known
