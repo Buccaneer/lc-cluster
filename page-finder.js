@@ -9,7 +9,7 @@ module.exports = new class PageFinder {
         // Note: does not check if file/dir
         for (let agency of config.agencies) {
             this.pages[agency.name] = []
-            // NOTE: <= because extra "cluster" 50 which contains all fragments
+            // NOTE: <= because extra "cluster" which contains all fragments
             for (let cluster = 0; cluster <= agency.clusters; ++cluster) {
                 this.pages[agency.name][cluster] = []
                 let path = config.path + '/' + agency.name + '/' + cluster

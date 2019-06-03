@@ -77,31 +77,34 @@ module.exports = class Fragmenter {
     }
     
     static createAllFragments() {
-        config.agencies.forEach((agency) => Fragmenter.createFragments(config.path + '/' + agency.name))
+        config.agencies.forEach((agency) => Fragmenter.createFragments(agency))
     }
     
     // Create a "cluster" with all the connections to compare with
     static createFragmentsWithoutCluster() {
-        let agencyPath = config.path + '/' + config.agencies[0].name
-        if (!fs.existsSync(agencyPath + '/50')) {
-            fs.mkdirSync(agencyPath + '/50')
-        }
-        let readStream = fs.createReadStream(agencyPath + '/connections-sorted.json');
-        let parseStream = JSONStream.parse("*")
-        readStream.pipe(parseStream).pipe(new PageWriterStream(agencyPath + '/50', 50000))
+        config.agencies.forEach((agency) => {
+            let agencyPath = config.path + '/' + agency.name
+            if (!fs.existsSync(agencyPath + '/' + agency.clusters)) {
+                fs.mkdirSync(agencyPath + '/' + agency.clusters)
+            }
+            let readStream = fs.createReadStream(agencyPath + '/connections-sorted.json');
+            let parseStream = JSONStream.parse("*")
+            readStream.pipe(parseStream).pipe(new PageWriterStream(agencyPath + '/' + agency.clusters, 50000))
+        });
     }
     
-    static createFragments(agencyPath) {
+    static createFragments(agency) {
+        let agencyPath = config.path + '/' + agency.name
         let clusters = []
-        clusters[50] = [] // TODO find a more elegant solution for stops whose location is not known
         
-        let index = JSON.parse(fs.readFileSync(agencyPath + '/index.json', 'utf8'));
-        let readStream = fs.createReadStream(agencyPath + '/connections-sorted.json');
+        let index = JSON.parse(fs.readFileSync(agencyPath + '/index.json', 'utf8'))
+        let readStream = fs.createReadStream(agencyPath + '/connections-sorted.json')
         let parseStream = JSONStream.parse("*")
         readStream.pipe(parseStream)
             .on('data', (connection) => {
                 let clusterIndex = index[connection.departureStop]
-                if (!clusterIndex && clusterIndex !== 0) clusterIndex = 50
+                // Removed failsafe when a connection's departurestop is not found
+                if (!clusterIndex && clusterIndex !== 0) throw "Connection stop not found" //clusterIndex = agency.clusters
                 if (Array.isArray(clusters[clusterIndex])) {
                     clusters[clusterIndex].push(connection)
                 } else {
@@ -132,8 +135,8 @@ module.exports = class Fragmenter {
     static createClusterSummary(agencyPath) {
         let summary = []
 
-        let index = JSON.parse(fs.readFileSync(agencyPath + '/index.json', 'utf8'));
-        let readStream = fs.createReadStream(agencyPath + '/connections-sorted.json');
+        let index = JSON.parse(fs.readFileSync(agencyPath + '/index.json', 'utf8'))
+        let readStream = fs.createReadStream(agencyPath + '/connections-sorted.json')
         let parseStream = JSONStream.parse("*")
         readStream.pipe(parseStream)
             .on('data', (connection) => {
