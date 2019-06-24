@@ -4,7 +4,8 @@
   "description": "Clusters stops using Linked Connections fragments",
   "main": "cluster.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "fragment": "node fragment.js",
+	"serve": "node server.js"
   },
   "author": "Pieter-Jan Vandenberghe",
   "license": "MIT",

@@ -1,6 +1,7 @@
 const express = require('express')
 const router = require('./router.js')
-const port = 3000
+const config = require('./config.js')
+const port = config.port
 
 let app = express()
 app.use('/', router)
